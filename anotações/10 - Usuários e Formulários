@@ -1,0 +1,218 @@
+==--APP DE USUARIOS--==
+
+O primeiro passo é criar um app que irá ser responsável por tratar os usuários, da seguinte maneira:
+
+criar o app "usuarios" com o comando startapp do Django
+
+adicionar a linha 'usuarios.apps.UsuariosConfig' em INSTALLED_APPS de settings.py
+
+como o app usuarios será responsável pelo login e o cadastro, seus respectivos métodos que irão chamar os futuros templates já podem ser criados em usuarios/views.py:
+
+def login(request):
+    return render(request, "usuarios/login.html")
+    
+def cadastro(request):
+    return render(request, "usuarios/cadastro.html")
+
+
+criar o arquivo usuarios/urls.py para o App usuarios, com o seguinte código:
+
+from django.urls import path
+from usuarios.views import login, cadastro
+
+urlpatterns = [
+    path('login', login, name='login'),
+    path('cadastro', cadastro, name='cadastro')
+]
+
+
+Depois, incluir as URLs do app usuarios no arquivo setup/urls.py:
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('galeria.urls')),
+    path('', include('usuarios.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+Depois, para criar os templates do app usuarios, é necessário criar o diretório "usuarios" dentro de "templates", que irá ter os arquivos login.html e cadastro.html
+
+na partial _menu.html, é importante ter os botões que irão direcionar para as telas de login e cadastro, adicionando aos respectivos href os trechos:
+{% url 'login' %}
+{% url 'cadastro' %}
+
+
+==--FORMULARIOS--==
+
+O Django possui ferramentas para lidar com formulários de maneira mais simplificada e deixando os arquivos HTML menos poluídos. O primeiro passo é criar (dentro da pasta do app usuarios) o arquivo forms.py, com o seguinte código:
+
+from django import forms
+
+class LoginForms(forms.Form):
+
+    nome_login = forms.CharField(
+        label="Usuário",
+        required=True,
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ex: JoaoSilva"
+            }
+        )
+    )
+    senha = forms.CharField(
+        label="Senha",
+        required=True,
+        max_length=70,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Digite sua senha"
+            }
+        )
+    )
+
+
+class CadastroForms(forms.Form):
+
+    nome_cadastro = forms.CharField(
+        label="Usuário",
+        required=True,
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ex: JoaoSilva"
+            }
+        )
+    )
+    email = forms.EmailField(
+        label="Email",
+        required=True,
+        max_length=100,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ex: joaosilva@email.com"
+            }
+        )
+    )
+    senha_1 = forms.CharField(
+        label="Senha",
+        required=True,
+        max_length=70,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Digite sua senha"
+            }
+        )
+    )
+
+    senha_2 = forms.CharField(
+        label="Senha",
+        required=True,
+        max_length=70,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Confirme sua senha"
+            }
+        )
+    )
+    
+
+Feito isso, basta adicionar ao código usuarios/views.py:
+
+from usuarios.forms import LoginForms, CadastroForms
+
+def login(request):
+    form = LoginForms()
+    return render(request, "usuarios/login.html", {"form": form})
+    
+def cadastro(request):
+    form = CadastroForms()
+    return render(request, "usuarios/cadastro.html", {"form": form})
+    
+
+Feito isso, o próximo passo é alterar o arquivo html das duas telas, chamando o Django na parte que monta o formulário. É importante que nessa etapa inclua o CSRF token para reforçar a segurança do formulário:
+
+<form action="" method="">
+    {% csrf_token %}
+    <div class="">
+    	{% for field in form.visible_fields %}
+    	    <div>
+    	    	<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    	    	{{ field }}
+    	    </div>
+    	{% endfor %}
+    </div>
+</form>
+
+(OBS: COMO ESSE TRECHO HTML É O MESMO PARA login.html E cadastro.html, DEPOIS PODE SER MOVIDO PARA UMA PARTIAL _forms.html QUE SERVIRÁ PARA AS DUAS TELAS)
+
+Feito isso, basta estilizar corretamente o formulário e adicionar um botão de submit, como nesse exemplo utilizando estilos do Bootstrap:
+
+<form action="" method="">
+    {% csrf_token %}
+    <div class="row">
+        {% for field in form.visible_fields %}
+            <div class="col-12 col-lg-12" style="margin-bottom: 10px;">
+            <label for="{{ field.id_for_label }}" style="color:#D9D9D9; margin-bottom: 5px;">{{ field.label }}</label>
+            {{ field }}
+            </div>
+            {% for error in field.errors %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    <div>
+        <button class="btn btn-success col-12" style="padding: top 5px;" type="submit">Logar/Cadastrar</button>
+    </div>
+</form>
+
+Também é importante alterar a tag <form> para ela saber exatamente o que fazer com os dados, como nos exemplos:
+
+login.html:
+
+<form action="{% url 'login' %}" method="POST">
+
+cadastro.html:
+
+<form action="{% url 'cadastro' %}" method="POST">
+
+
+
+Para aplicar uma boa prática e separar o form em uma partial, basta separar nela da seguinte forma:
+
+No template que chamará a partial (login.html por exemplo):
+
+<form action="{% url 'login' %}" method="POST">
+    {% include 'usuarios/partials/_forms.html' %}
+    <div>
+        <button class="btn btn-success col-12" style="padding: top 5px;" type="submit">Logar</button>
+    </div>  
+</form>
+
+
+Na partial _forms.html:
+
+{% block content %}
+    {% csrf_token %}
+    <div class="row">
+        {% for field in form.visible_fields %}
+        <div class="col-12 col-lg-12" style="margin-bottom: 10px;">
+            <label for="{{ field.id_for_label }}" style="color:#D9D9D9; margin-bottom: 5px;">{{ field.label }}</label>
+            {{ field }}
+        </div>
+            {% for error in field.errors %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+{% endblock %}

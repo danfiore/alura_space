@@ -1,0 +1,13 @@
+(Necessário ter a VirtualEnv instalada)
+
+virtualenv venv
+source venv/bin/activate
+pip install django
+pip freeze
+pip freeze > requirements.txt
+django-admin startproject setup .
+python manage.py runserver	
+
+alterar idioma e fuso horário em settings.py
+
+

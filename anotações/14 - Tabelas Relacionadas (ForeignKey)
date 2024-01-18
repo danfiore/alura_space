@@ -1,0 +1,23 @@
+Para demonstrar como relacionar uma tabela, vamos seguir no exemplo do Alura Space, onde agora tendo uma tabela de usuários, podemos relacioná-la com a tabela de fotografia. Para isso, basta ir no arquivo models.py do app galeria e adicionar o campo:
+
+from django.contrib.auth.models import User
+
+class Fotografia(models.Model):
+
+    #...
+    usuario = models.ForeignKey(
+    	to=User,
+    	on_delete=models.SET_NULL, #Define oq acontece caso o usuário seja deletado
+    	null=True,
+    	blank=False,
+    	related_name="user",
+    )
+    
+Depois, basta chamar os comandos makemigrations e migrate no terminal:
+
+python manage.py makemigrations
+python manage.py migrate
+
+Também é uma boa opção incluir um filtro no arquivo admin.py, onde você pode filtrar as fotografias tanto por categoria quanto por usuario:
+
+list_filter = ("categoria", "usuario", )

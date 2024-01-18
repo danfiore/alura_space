@@ -1,0 +1,34 @@
+No nosso exemplo do Alura Space, temos quadros de tags no template de index que exibe as devidas categorias, porém quando clicados a página não reage em nada. Pra isso, devemos transformá-los em botões:
+
+<section class="tags">
+    <p class="tags__titulo">Busque por tags:</p>
+    <ul class="tags__lista">
+        <li class="tags__tag"><a href="{% url 'filtro' 'NEBULOSA' %}" class="btn" style="color: #C9C9C9;">Nebulosa</a></li>
+        <li class="tags__tag"><a href="{% url 'filtro' 'ESTRELA' %}" class="btn" style="color: #C9C9C9;">Estrela</a></li>
+        <li class="tags__tag"><a href="{% url 'filtro' 'GALÁXIA' %}" class="btn" style="color: #C9C9C9;">Galáxia</a></li>
+        <li class="tags__tag"><a href="{% url 'filtro' 'PLANETA' %}" class="btn" style="color: #C9C9C9;">Planeta</a></li>
+    </ul>
+</section>
+
+
+Os botões redirecionam o usuário para as URL filtro, que devem ter um pacote url e um método view definido com a lógica de exibição:
+
+urls.py:
+
+
+from apps.galeria.views import index, imagem, buscar, nova_imagem, \
+                               editar_imagem, deletar_imagem, filtro
+                               
+urlpatterns = [
+   #...
+   path('filtro/<str:categoria>', filtro, name="filtro"),
+]                    
+
+
+
+views.py: 
+
+def filtro(request, categoria):
+    fotografias = Fotografia.objects.order_by("data_fotografia").filter(publicada=True, categoria=categoria)
+
+    return render(request, 'galeria/index.html', {"cards": fotografias})

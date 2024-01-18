@@ -1,0 +1,171 @@
+=========
+=-DADOS-=
+=========
+
+Para inserir dados manualmente, o primeiro passo é ir no views.py da pasta nomeDoApp, e montar a estrutura que irá lidar com os tais dados. Como o exemplo é do projeto alura-space, essa estrutura irá ser montada no metodo index() apenas para exibir dois registros
+
+def index(request):
+    
+    dados = {
+        1: {"nome": "Nebulosa de Carina",
+            "legenda": "webbtelescope.org / NASA / James Webb"}
+        2: {"nome": "Galáxia NGC 1079",
+            "legenda": "nasa.org / NASA / Hubble"}
+    }
+    
+    return render(request, 'galeria/index.html', {"cards": dados})
+
+    
+Na hora de retornar, é enviado um dicionário enviando os dados para todas as tags que forem da classe "cards" no .html
+
+
+Indo no código HTML, uma maneira de deixar a página dinâmica para receber os dados é criar um laço de repetição usando código python dentro da página, ou seja, usando {% %}. Para isso deve também inserir os dados puxados do banco utilizando chaves duplas {{ }}, como mostra o exemplo:
+
+...
+<ul class="cards_lista">
+   {% for foto_id, info in cards.items %}
+   <li class="card">
+      <a href="{% url 'imagem' %}">
+         <img class="card__imagem" src="{% static '/assets/imagens/galeria/carina-nebula.png' %}" alt="foto">
+      </a>
+      <span class="card__tag">Estrelas</span>
+      <div class="card__info">
+         <p class="card__titulo">{{ info.nome }}</p>
+         <div class="card__texto">
+            <p class="card__descricao">{{ info.legenda }}</p>
+            <span>
+               <img src="{% static '/assets/ícones/1x/favorite_outline.png' %}" alt="ícone de coração">
+            </span>
+         </div>
+      </div>
+   </li>
+   {% endfor %}
+</ul>
+
+
+==========
+=-MODELS-=
+==========
+
+Sempre que você cria um App, na pasta "nomeDoApp" é criado um arquivo models.py, que será o responsável por tratar as tabelas do banco como classes. Seguindo o exemplo do Alura Space:
+
+from django.db import models
+from datetime import datetime #lib pra poder manipular datas
+
+class Fotografia(models.Model):
+
+    OPCOES_CATEGORIA = [
+        ("NEBULOSA", "Nebulosa"),
+        ("ESTRELA", "Estrela"),
+        ("GALÁXIA", "Galáxia"),
+        ("PLANETA", "Planeta"),
+    ]
+    
+    nome = models.CharField(max_length=100, null=False, blank=False)
+    legenda = models.CharField(max_length=150, null=False, blank=False)
+    categoria = models.CharField(max_Length=100, choices=OPCOES_CATEGORIA, 
+    				 default='') #Categoria para filtragem
+    descricao = models.TextField(null=False, blank=False)
+    #foto = models.CharField(max_length=100, null=False, blank=False)
+    foto = models.ImageField(upload_to="fotos/%Y/%m/%d/", blank=True) #Upload de Mídia
+    publicada = models.BooleanField(default=False) #Booleana
+    data_fotografia = models.DateTimeField(default=datetime.now, blank=False)
+    		      #Data
+    		      
+    
+    def ___str___(self):
+    	#return f"Fotografia [nome={self.nome}]" #Melhor visualização no terminal
+    	return self.nome #Melhor visualização no Admin
+    	
+
+
+Para mandar o Django transformar a classe em uma tabela, é necessário rodar no terminal o comando:
+
+python manage.py makemigrations
+
+Assim,  na pasta "migrations" dentro da pasta "nomeDoApp" será gerado um novo arquivo .py que será responsável por criar o model da tabela, gerando automáticamente um ID como chave primária. Para enfim aplicar a migração, e criar de fato a tabela no banco, é necessário digitar o comando:
+
+python manage.py migrate
+
+Feito isso, está criado o banco de dados do projeto, podendo ser visualizado com a extensão SQLite Viewer do VSCode. Essa extensão pode ser usada para visualizar o arquivo db.sqlite3 gerado no projeto
+
+Agora, se você quiser abrir um console interativo para tratar os dados diretamente com o django, basta inserir o comando:
+
+python manage.py shell
+
+Dessa forma pode inserir código python que será responsável por tratar e incluir dados, sem precisar inserir eles diretamente no projeto como no começo dessa anotação. Exemplo:
+
+(Interactive Console)
+>>> from galeria.models import Fotografia
+>>> foto = Fotografia(nome="Nebulosa de Carina", legenda="webbtelescope.org / NASA / James Webb", foto="carina-nebula.png")
+>>> foto.save()
+
+Se quiser testar, você pode puxar todos os objetos da classe Fotografia com o método objects.all(), que irá retornar o método ___str___(self) de cada objeto:
+
+>>> Fotografia.objects.all()
+
+
+Feito tudo isso, é recomendado aplicar uma melhor prática de programação no settings.py, pois em INSTALLED_APPS você pode aplicar todas as configurações específicas do App ao invés de somente o aplicativo. Assim, sempre que for feita uma mudança na aplicação, o django atualiza e puxa essa modificação. Para isso basta trocar a linha 'nomeDoApp' do INSTALLED_APPS para 'nomeDoApp.apps.NomeDoAppConfig', exemplo:
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'galeria.apps.GaleriaConfig',
+]
+
+
+Dessa forma, podendo já inserir dados diretamente no banco, o dicionário "dados" de views.py já não é mais necessário, podendo ser trocado por uma variável que receberá o método objects.all(), o método objects.filter() com base no campo "publicada" ou o método objects.order_by() que irá ordenar com base no parâmetro enviado (o order_by() pode inverter o parâmetro usando - e pode ser usado junto com o filter())
+
+from galeria.models import Fotografia
+
+def index(request):
+    fotografias = Fotografia.objects.all()
+    #fotografias = Fotografia.objects.filter(publicada=True)
+    #fotografias = Fotografia.objects.order_by("data_fotografia").all()
+    			             #order_by("-data_fotografia").all()
+    return render(request, 'galeria/index.html', {"cards": fotografias})
+    
+    
+Assim o laço de repetição no index.html pode ser alterado para:
+
+{% for fotografia in cards %}
+
+(também deve alterar todas as variáveis que estavam como "info" para "fotografia")
+
+Também é melhor adicionar uma condição para definir se existem cards para serem exibidos, dessa forma:
+
+{% if cards %}
+{% for fotografia in cards %}
+...
+{% endfor %}
+{% else %}
+{% endif %}
+
+Para adicionar uma imagem de maneira dinâmica, é só alterar a linha que chama a imagem:
+
+{% static '/assets/imagens/galeria/'%}{{ fotografia.foto }}
+
+
+
+Para conseguir redirecionar para a URL correta da fotografia em questão, basta alterar a linha que aponta a URL da imagem indicando a chave primária da fotografia:
+
+{% url 'imagem' fotografia.id %}
+
+Depois disso, no urls.py dentro da pasta "nomeDoApp", é necessário definir como a URL vai separar cada fotografia utilizando < >:
+
+urlpatterns = [
+   path('', index, name='index'),
+   path('imagem/<int:foto_id>', imagem, name='imagem'),
+]
+
+Depois, essa informação deve ser capturada pelo views.py dentro de nomeDoApp, portanto o views deve saber o que seria o foto_id e trazer o objeto/registro correto dele:
+
+from django.shortcuts import render, get_object_or_404
+
+def imagem (request, foto_id):
+    fotografia = get_object_or_404(Fotografia, pk=foto_id)
+    return render(request, 'galeria/imagem.html', {"fotografia": fotografia})

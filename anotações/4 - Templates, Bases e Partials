@@ -1,0 +1,68 @@
+Criar a pasta "templates" no projeto, que irá conter todas as páginas .html do projeto
+
+Ir em settings.py, em TEMPLATES, e alterar o DIRS:
+    'DIRS': [os.path.join(BASE_DIR, 'templates')],
+    
+criar o arquivo index.html na pasta templates
+inserir código html
+
+
+ir para views.py em nomeDoApp:
+
+remover a linha "from django.http import HttpResponse"
+
+alterar a função index para:
+
+def index(request):
+    return render(request, 'index.html')
+    
+(TODO NOVO TEMPLATE QUE FOR INCLUIDO NO PROJETO DEVE TER UMA FUNÇÃO RECEBENDO A REQUISIÇÃO E RENDERIZANDO ELA, ATRAVÉS DO SEGUNDO PARÂMETRO QUE É UMA STRING DO CAMINHO DO ARQUIVO)
+    
+O próximo passo é carregar os templates, para isso:
+
+criar pasta chamada nomeDoApp na pasta templates, e mover o arquivo index.html para lá
+
+ir em views.py e alterar o método index para:
+
+def index(request):
+    return render(request, 'nomeDoApp/index.html')
+    
+Se existir um front-end da página pronto, o html já pode ser copiado para o arquivo index.html
+
+
+======================
+==BASES DE TEMPLATES==
+======================
+
+As bases de templates são uma maneira de DRY (Dont Repeat Yourself), e pode ser aplicada no Django através do metodo extends
+
+O primeiro passo é criar na mesma pasta dos templates o arquivo base.html, onde após remover o conteúdo que irá para o novo arquivo, ir nos .html que irão receber o template base e escrever na primeira linha:
+
+{% extends 'nomeDoApp/base.html' %}
+
+Depois disso, no arquivo base.html, inserir na tag <body> (onde o conteúdo será variado):
+
+{% block content %} {% endblock %}
+
+esses dois comandos servem como uma forma de definir o começo e o fim de um bloco, de forma que eles serão colados no base.html exatamente como se estivessem na linha que foi digitado
+
+para definir quais os blocos de cada tela, você deve voltar ao começo de cada uma delas e digitar:
+
+{% block content %}
+
+depois no final:
+
+{% endblock %}
+
+
+============
+==PARTIALS==
+============
+
+O primeiro passo é, na pasta 'nomeDoApp', criar a pasta 'partials', onde dentro irá conter o arquivo da partial no formato __partial.html
+
+Um exemplo: Criar o arquivo __footer.html que será único responsável por guardar a tag <footer> que estará nas duas telas do projeto.
+
+Após isso, deve indicar no arquivo base.html no local onde viria a tag <footer>, e incluir o método:
+
+{% include 'nomeDoApp/partials/__footer.html' %}

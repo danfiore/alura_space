@@ -1,0 +1,54 @@
+Um App é uma "parte viva" do projeto que tem funcionalidades específicas, é uma maneira de deixar o código mais limpo e organizado
+
+python manage.py startapp nomeDoApp
+adicionar o 'nomeDoApp' no INSTALLED_APPS de settings.py
+
+
+Agora, para começar a trabalhar com Views e URLs, devemos ir no arquivo views.py (gerado na pasta do app que foi criado) para importar e chamar a função que responde as requisições:
+
+from django.http import HttpResponse 
+
+def index(request):
+    return HttpResponse('<h1>HTML</h1>')
+    
+
+depois, no arquivo urls.py em setup/config e criar um novo path de urlpatterns (isso serve mais como teste, pois depois iremos isolar as URLs do App)
+
+from nomeDoApp.views import index
+
+url patterns = [
+    path('', index),
+]
+
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+TODA NOVA URL DEVE TER UM NOVO PATH INSERIDO NO SEGUINTE FORMATO:
+
+from nomeDoApp.views import index, novaURL
+
+url patterns = [
+    path('', index, name = 'index'),
+    path('novaURL/', novaURL, name = 'novaURL'),
+]
+
+DEPOIS, NA LINHA HTML DA TELA QUE FOR CHAMAR A novaURL, INCLUIR:
+
+<a href="{% url 'novaURL'%}">
+\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+agora para isolar as URLs, criar o arquivo urls.py na pasta de nomeDoApp:
+
+from django.urls import path
+from nomeDoApp.views import index
+
+urlpatterns = [
+   path('', index),
+]
+
+
+agora no urls.py de setup/config:
+
+remover a linha "from nomeDoApp.views import index", já que ela não será mais necessária
+
+importar de django.urls o metodo include
+
+alterar a linha "path('', index)" para:
+path('', include('nomeDoApp.urls')),

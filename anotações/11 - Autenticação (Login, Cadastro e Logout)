@@ -1,0 +1,96 @@
+==-CADASTRO-==
+
+O primeiro passo é entender que após preencher um formulário de registro ou autenticação, o usuário será redirecionado para a mesma página porém através de um método POST. Portanto, é necessário incluir alterações no método em questão (em usuarios/views.py) para verificar se é o caso:
+
+
+def cadastro(request):
+    form = CadastroForms()
+    
+    if request.method == 'POST':
+        form = CadastroForms(request.POST)
+    
+    return render(request, "usuarios/cadastro.html", {"form": form})
+    
+    
+Também já pode incluir algumas validações: uma para saber se o os campos do formulário foram preenchidos de maneira correta, outra para verificar se o nome de usuario já está sendo usado, e a terceira para verificar se as duas senhas estão iguais, da seguinte forma:
+
+from django.contrib.auth.models import User
+
+def cadastro(request):
+    form = CadastroForms()
+    
+    if request.method == 'POST':
+        form = CadastroForms(request.POST)
+        
+        #Validação do formulário e das senhas
+        if form.is_valid():
+            if form["senha_1"].value() != form["senha_2"].value():
+                return redirect('cadastro')
+            
+            #Coleta de dados dos formulários
+            nome = form["nome_cadastro"].value()
+            email = form["email"].value()
+            senha = form["senha_1"].value()
+            
+            #Verificação se o nome está disponível
+            if User.objects.filter(username=nome).exists():
+                return redirect('cadastro')
+            
+            
+            #Registro dos dados em um novo usuário
+            usuario = User.objects.create_user(
+            	username=nome,
+            	email=email,
+            	password=senha
+            )
+            usuario.save()
+            
+            return redirect('login')
+    
+    return render(request, "usuarios/cadastro.html", {"form": form})
+
+
+==-LOGIN-== 
+
+A lógica do Login é parecida, com a diferença de que ao invés de salvar um novo usuário no banco de dados, vai autenticar e iniciar a sessão de um usuário já existente:
+
+from django.contrib import auth
+
+def login(request):
+    form = LoginForms()
+
+    if request.method == 'POST':
+        form = LoginForms(request.POST)
+	
+	#Validação do formulário
+        if form.is_valid():
+            nome = form["nome_login"].value()
+            senha = form["senha"].value()
+	
+	#Autenticação de usuário
+        usuario = auth.authenticate(
+            request,
+            username=nome,
+            password=senha	
+        )
+        
+        if usuario is not None:
+            auth.login(request, usuario)
+            return redirect('index')
+        else:
+            return redirect('login')
+            
+   return render(request, 'usuarios/login.html', {"form": form})
+   
+   
+==-LOGOUT-==
+
+Para adicionar a funcionalidade de Logout, basta adicionar um método responsável para isso em usuarios/views.py:
+
+def logout(request):
+    auth.logout(request)
+    return redirect('login')
+    
+(Não esquecer de adicionar um novo path para logout em usuarios/urls.py)
+
+

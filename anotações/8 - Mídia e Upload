@@ -1,0 +1,49 @@
+Para podermos ter a funcionalidade de upload de mídia no projeto, é necessário que o Django tenha um diretório separado para receber esses arquivos que serão inseridos. Dessa forma, podemos ter um espaço do código do settings.py para tratar da mídia, adicionando as seguintes linhas:
+
+# Media
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media") 
+
+MEDIA_URL = "/media/"
+
+
+Após isso, o passo seguinte é ir no arquivo urls.py (o do setup/config, não o da pasta nomeDoApp), e incrementar a variável urlpatterns
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('galeria.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+(IMPORTANTE: Para esse processo funcionar, o campo que receberá o upload da imagem no models.py deve receber um models.ImageField(), ao inves de um models.CharField que apenas registra o caminho do arquivo)
+
+
+Feito isso, já é possível alterar como o template lida com as imagens, deixando o código mais limpo. Nesse exemplo vai ser aplicado uma lógica onde se não exitir imagem disponível pro objeto Fotografia, será exibida uma imagem padrão de not found:
+
+
+index.html:
+
+<a href="{% url 'imagem' fotografia.id %}">
+  {% if fotografia.foto == "" or fotografia.foto == null %}
+    <img class="card__imagem" src="{% static '/assets/imagens/galeria/no-image.png'%}" alt="foto">
+  {% else %}
+    <!-- <img class="card__imagem" src="{% static '/assets/imagens/galeria/'%} {{ fotografia.foto }}" alt="foto"> ANTIGO -->
+    <img class="card__imagem" src="{{ fotografia.foto.url }}" alt="foto"> <!-- NOVO -->  
+  {% endif %}
+</a>
+
+
+imagem.html:
+
+<div class="imagem__conteudo">
+  {% if fotografia.foto == "" or fotografia.foto == null %}
+    <img class="imagem__imagem" src="{% static '/assets/imagens/galeria/no-image.png'%}">
+  {% else %}
+     <!-- <img class="imagem__imagem" src="{% static '/assets/imagens/galeria/'%}{{ fotografia.foto }}"> -->
+     <img class="imagem__imagem" src="{{ fotografia.foto.url }}">
+  {% endif %}
+  ...
+</div>

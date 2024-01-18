@@ -1,0 +1,114 @@
+AWS é um serviço de Cloud para salvar os dados salvos do seu banco na Nuvem, ao invés de um servidor local. Devemos gerar um bucket do S3 para o projeto, habilitando as ACLs e desmarcando a opção de bloquear todo o acesso público. Depois, devemos criar um usuário do IAM, dando a ele permissão do AmazonS3FullAccess. Devemos acessar a aba Credenciais de Segurança, e criar uma nova Chave de Acesso com a prática de Command Line Interface. Isso irá gerar uma chave de acesso e uma chave de acesso secreta,  que você deverá utilizar pra conexão com o Django.
+
+Depois, devemos fazer a conexão com o nosso projeto Django, mas pra isso devemos instalar duas bibliotecas, a django-storages e a boto3 com os seguintes comandos:
+
+> pip install django-storages
+> pip install boto3
+> pip freeze > requirements.txt
+
+
+Assim, podemos fazer as alterações no arquivo settings.py, inserindo o pacote 'storages' em INSTALLED_APPS e reservando um espaço do código para essa conexão:
+
+INSTALLED_APPS = [
+    #...
+    
+    'storages',
+]
+
+#...
+
+#AWS Configuração
+
+AWS_ACCESS_KEY_ID = 'String da Chave de Acesso'
+
+AWS_SECRET_ACCESS_KEY = 'String da Chave de Acesso Secreta'
+
+AWS_STORAGE_BUCKET_NAME = 'fotografias-alura-space'
+
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.sa-east-1.amazonaws.com'
+
+AWS_DEFAULT_ACL = 'public-read'
+
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400'
+}
+
+AWS_LOCATION = 'static'
+
+AWS_QUERYSTRING_AUTH = False
+
+AWS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+}
+
+
+Depois, na sessão do settings.py reservada para os Statics, incluir as seguintes configurações:
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+#...
+
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+
+(Depois dessa alteração, verificar se alguma parte do código não esta se referenciando a url do static usando / no começo, já que agora isso não será mais necessário. Também pode excluir o diretorio media do projeto)
+
+
+Também é necessário incluir uma condição no arquivo urls.py de setup, da seguinte forma:
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('apps.galeria.urls')),
+    path('', include('apps.usuarios.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    
+    
+Depois, rodar no terminal o comando:
+
+> python manage.py collectstatic
+
+Feito isso, a conexão já deve funcionar e qualquer dado que for salvo no banco deve agora aparecer no S3 também, porém é necessário reforçar a segurança impedindo que certas informações sejam visualizadas em um repositório GitHub por exemplo. Pra isso, devemos utilizar o metodo load_dotenv utilizado no começo do projeto. 
+
+Antes disso, caso queira gerar uma nova secret key do projeto, devemos criar uma pasta chamada "scripts" no projeto e dentro dela o arquivo secret_key_generator.py com o seguinte código:
+
+from django.core.management.utils import get_random_secret_key
+
+print(get_random_secret_key)
+
+
+Depois, rodar os seguintes comandos no terminal:
+
+> cd scripts/
+> python3 secret_key_generator.py
+
+O terminal irá retornar uma nova Secret Key, que você pode copiar pra inserir no arquvio .env (que está incluido no .gitignore):
+
+SECRET_KEY = 'Chave copiada do terminal'
+
+AWS_ACCESS_KEY_ID = 'String da Chave de Acesso'
+
+AWS_SECRET_ACCESS_KEY = 'String da Chave de Acesso Secreta'
+
+AWS_STORAGE_BUCKET_NAME = 'fotografias-alura-space'
+
+
+Depois, você deve voltar ao arquivo settings.py e alterar as configurações do AWS, escondendo os dados sigilosos:
+
+# AWS Settings
+
+AWS_ACCESS_KEY_ID = str(os.getenv('AWS_ACCESS_KEY_ID'))
+
+AWS_SECRET_ACCESS_KEY = str(os.getenv('AWS_SECRET_ACCESS_KEY'))
+
+AWS_STORAGE_BUCKET_NAME = str(os.getenv('AWS_STORAGE_BUCKET_NAME'))

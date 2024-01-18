@@ -1,0 +1,35 @@
+Devemos antes de tudo proteger a SECRET_KEY em settings.py, no caso recortando a Key e isolando ela em um arquivo que não será enviado para o repositório do GitHub.
+
+
+Pra isso é necessário instalar o python-dotenv e atualizar o requirements.txt
+
+pip install python-dotenv
+pip freeze > requirements.txt
+
+
+criar um arquivo .env no projeto, onde terá a linha:
+
+SECRET_KEY = key copiada do settings.py
+
+
+Depois disso, é necessário voltar ao settings.py e importar 'os' de 'pathlib' e importar 'load_dotenv' de 'dotenv', assim:
+
+from pathlib import Path, os
+from dotenv import load_dotenv
+
+
+Agora, é só chamar a função que irá trazer a key para o SECRET_KEY sem expor ela:
+
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
+
+
+A próxima etapa é para de fato versionar com o GitHub:
+
+criar um arquivo .gitignore no projeto (uma boa opção é usar a plataforma gitignore.io)
+
+git init (iniciar repositório local)
+git add . (copiar tudo que será enviado)
+git commit -m "primeiro commit"
+git remote add origin https://linkdorepositório.git
+git push origin master 
+

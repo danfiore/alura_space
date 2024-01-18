@@ -1,0 +1,153 @@
+====-CREATE-====
+
+O primeiro passo para um usuário poder ter a opção de Create, ele precisa ter uma opção de incluir um novo item. No exemplo no Alura Space, vamos incluir ao menu da página (na partial _menu.html) a opção de Nova Imagem, da seguinte forma:
+
+<a href=""><img src="{% static 'assets/ícones/1x/new.png' %}"> Nova Imagem</a>
+
+Assim, com o icone criado, devemos fazer todo o processo de estabelecer uma rota para as opções de CRUD. Assim, vamos na nossa views do app galeria e incluir os métodos nova_imagem(), editar_imagem() e deletar(imagem), para depois incluir seus respectivos paths no arquivo urls.py de galeria:
+
+path('nova-imagem', nova_imagem, name="nova_imagem"),
+path('editar-imagem/<int:foto_id>', editar_imagem, name="editar_imagem"),
+path('deletar-imagem/<int:foto_id>', deletar_imagem, name="deletar_imagem"),
+
+Depois podemos incluir o redirecionamento na linha do icone em _menu.html:
+
+<a href="{% url 'nova_imagem' %}"><img src="{% static 'assets/ícones/1x/new.png' %}"> Nova Imagem</a>
+
+Assim, basta incluir um template nova_imagem.html e redirecionar o usuário para ele na views:
+
+def nova_imagem(request):
+    return render(request, 'galeria/nova_imagem.html')
+
+
+Para um usuário incluir uma nova imagem, ele precisa ter acesso a um formulário onde irá inserir suas informações. Pra isso, precisamos ter um arquivo forms.py dentro do app de galeria:
+
+
+from django import forms
+from apps.galeria.models import Fotografia
+
+
+class FotografiaForms(forms.ModelForm):
+
+    #A classe Meta gera o formulário com base na tabela do banco:
+    class Meta:
+        model = Fotografia
+        exclude = ['publicada',] #Não é o usuario quem decide(alterar pra true no models)
+        labels = {
+            'descricao': 'Descrição',
+            'data_fotografia': 'Data de registro',
+            'usuario': 'Usuário',
+        }
+
+        widgets = {
+            'nome': forms.TextInput(attrs={'class':'form-control'}),
+            'legenda': forms.TextInput(attrs={'class':'form-control'}),
+            'categoria': forms.Select(attrs={'class':'form-control'}),
+            'descricao': forms.Textarea(attrs={'class':'form-control'}),
+            'foto': forms.FileInput(attrs={'class':'form-control'}),
+            'data_fotografia': forms.DateInput(
+                format='%d/%m/%Y',
+                attrs={
+                    'type':'date',
+                    'class':'form-control'
+                    }
+                ),
+            'usuario': forms.Select(attrs={'class':'form-control'}),
+        }
+
+
+Criado esse formulário, já podemos incluir no template de nova_imagem.html a partial responsável por exibir os campos a serem preenchidos:
+
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block content %}
+            <section class="galeria" style="margin-left: 5em">
+                <form action="{% url 'nova_imagem' %}" method="POST" enctype="multipart/form-data">
+                    {% include 'partials/_forms.html' %}
+                    <div>
+                        <button class="btn btn-success col-12" style="padding: top 5px;" type="submit">Publicar Nova Fotografia</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+{% endblock %}
+
+
+Depois, dentro de views.py, devemos definir que o método nova_imagem acessa um formulário:
+
+from apps.galeria.forms import FotografiaForms
+
+#...
+
+def nova_imagem(request):
+    if not request.user.is_authenticated:
+    	messages.error(request, 'Usuário não logado')
+    	return redirect('login')
+	
+    form = FotografiaForms
+    
+    if request.method == 'POST':
+        form = FotografiaForms(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Nova fotografia cadastrada!')
+            return redirect('index')
+    
+    return render(request, 'galeria/nova_imagem.html', {'form': form})
+    
+    
+====-EDIT E DELETE-====
+
+Primeiro passo, vamos criar os botões dentro de galeria/imagem.html:
+
+<div>
+    <a href="{% url 'editar_imagem' fotografia.id %}"><button class="btn btn-success col-12" style="padding: top 5px;">Editar</button></a>
+    <a href="{% url 'deletar_imagem' fotografia.id %}"><button class="btn btn-danger col-12" style="padding: top 5px;">Deletar</button></a>
+</div>
+
+Depois, no arquivo views.py, devemos incluir no método editar_imagem toda a lógica de exibição da tela de edição:
+
+def editar_imagem(request, foto_id):
+    fotografia = Fotografia.objects.get(id=foto_id)
+    form = FotografiaForms(instance=fotografia)
+    
+    if request.method == 'POST':
+        form = FotografiaForms(request.POST, request.FILES, instance=fotografia)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Edição salva!')
+            return redirect('index')
+    
+    return render(request, 'galeria/editar_imagem.html' {'form': form, 'foto_id': foto_id})
+    
+
+Como o método irá renderizar um novo template chamado editar_imagem.html, devemos criá-lo:
+
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block content %}
+            <section class="galeria" style="margin-left: 5em">
+                <form action="{% url 'editar_imagem' foto_id %}" method="POST" enctype="multipart/form-data">
+                    {% include 'partials/_forms.html' %}
+                    <div>
+                        <button class="btn btn-success col-12" style="padding: top 5px;" type="submit">Salvar</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+{% endblock %}
+
+
+Para deletar uma fotografia, é um processo bem mais simplificado, basta criar a seguinte lógica no metodo deletar_imagem de views.py:
+
+def deletar_imagem(request, foto_id):
+    fotografia = Fotografia.objects.get(id=foto_id)
+    fotografia.delete()
+    messages.success(request, 'Fotografia Deletada!')
+    
+    return redirect('index')
+

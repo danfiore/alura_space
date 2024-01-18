@@ -1,0 +1,64 @@
+==-Autenticação-==
+
+Para adicionar uma regra de negócio validando que o usuário só pode ter acesso a tela de index caso esteja logado, basta adicionar no arquivo views.py onde estiver o método index():
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+#...
+
+def index(request):
+    if not request.user.is_authenticated:
+    	messages.error(request, "Usuário não logado")
+    	return redirect('login')
+    
+    #...
+    
+def buscar(request):
+    if not request.user.is_authenticated:
+    	messages.error(request, "Usuário não logado")
+    	return redirect('login')
+    	
+    #...
+    
+    
+==-Regras de Cadastro-==
+
+Uma outra validação que podemos fazer, é garantir que o nome de usuário não contenha espaços dentro dele e que a aplicação avise isso ao usuário. Podemos fazer isso através de um método de validação clean no arquivo forms.py:
+
+#A formatação deve seguir a regra: clean_nome_do_campo
+
+def clean_nome_cadastro(self):
+    nome = self.cleaned_data.get("nome_cadastro")
+    
+    if nome:
+    	nome = nome.strip() #Retira espaços do inicio e fim
+    	if " " in nome:
+    	    raise forms.ValidationError("Espaços não permitidos nesse campo")
+    	else:
+    	    return nome
+
+Também podemos incluir aqui uma validação para verificar se as duas senhas estão iguais, e assim podemos retirar do views.py a validação que cumpre esse papel atualmente:
+
+def clean_senha_2(self):
+    senha_1 = self.cleaned_data.get("senha_1")
+    senha_2 = self.cleaned_data.get("senha_2")
+    
+    if senha_1 and senha_2:
+    	if senha_1 != senha_2:
+    	    raise forms.ValidationError("Senhas diferentes")
+    	else:
+    	    return senha_2
+
+Depois, para que a mensagem de error enviada através do raise seja exibida para o usuário, basta entrar no template onde está o laço que exibirá o formulário, e adicionar um novo laço dentro dele verificando se há erros:
+
+{% for field in form.visible_fields %}
+    <div class="col-12 col-lg-12" style="margin-bottom: 10px;">
+        <label for="{{ field.id_for_label }}" style="color:#D9D9D9; margin-bottom: 5px;">{{ field.label }}</label>
+        {{ field }}
+    </div>
+    {% for error in field.errors %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+    {% endfor %}
+{% endfor %}

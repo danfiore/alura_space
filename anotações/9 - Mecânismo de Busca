@@ -1,0 +1,56 @@
+Para direcionar o usuário pra uma busca, o primeiro passo é indicar uma rota dentro do Django. No arquivo views.py, precisa indicar o caminho da rota:
+
+def buscar(request):
+    return render(request, 'nomeDoApp/buscar.html')
+    
+
+Depois, no arquivo urls.py de nomeDoApp, deve-se adicionar um novo path():
+
+from galeria.views import index, imagem, buscar
+
+urlpatterns = [
+    path('', index, name='index'),
+    path('imagem/<int:foto_id>', imagem, name='imagem'),
+    path('buscar', buscar, name='buscar'),
+]
+
+
+Nesse caso, um arquivo buscar.html precisará ser criado, e pode ter qualquer conteúdo inserido só para ser testado. Mas antes, é necessário indicar a url de buscar pelo template base. Como foi criado uma partial _menu.html que é onde está o mecanismo de busca, deve alterar a forma como ela lida com o campo:
+
+<div class="busca__fundo">
+  <form action="{% url 'buscar' %}">
+    <input class="busca__input" name="buscar" type="text" placeholder="O que você procura?">
+    <button type="submit">
+      <img class="busca__icone" src="{% static '/assets/ícones/1x/search.png' %}" alt="ícone de search">
+    </button>
+  </form>
+</div>
+
+
+Feito isso, para que a tela de busca tenha de fato um template, pode copiar o código de index.html como base. Com a diferença de que, na lógica de verificação se existe um card da Fotografia, será exibido um resultado diferente caso não exista alguma imagem correspondente a busca do usuário (também pode ser aplicado no index.html se fizer sentido com o projeto):
+
+
+{% else %}
+  <div class="imagem_texto">
+    <p>Fotografias não encontradas</p>
+  </div>
+{% endif %}
+
+
+Depois, é necessário voltar ao views.py e enviar como parâmetro pro método buscar() a pesquisa do usuário, assim como buscar os registros no banco que coincidem com a busca.
+
+def buscar(request):
+    fotografias = Fotografia.objects
+                            .order_by("-data_fotografia")
+                            .filter(publicada=True)
+
+    if "buscar" in request.GET: 
+        nome_a_buscar = request.GET['buscar'] #Variável que recebe a busca
+        if nome_a_buscar:
+            fotografias = fotografias.filter(nome__icontains = 
+                                             nome_a_buscar)
+            #__icontains é uma funcionalidade mais inteligente do 
+            #Django para comparar a pesquisa 
+
+    return render(request, "galeria/buscar.html", 
+                  {"cards":  fotografias})

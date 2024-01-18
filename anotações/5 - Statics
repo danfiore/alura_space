@@ -1,0 +1,30 @@
+Primeiro de tudo é necessário indicar o caminho de onde estarão os arquivos estáticos. Para isso, o primeiro passo é criar a pasta "static" dentro de setup (ou config)
+
+Depois de criada a pasta, ir em settings.py na área separada para Static files e criar a variável que indicará o caminho da pasta:
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'setup/static')
+]
+
+Também indicar o caminho absoluto pro diretório conseguir pegar os arquivos estáticos (no caso  uma futura pasta que será criada assim que o python conseguir manipular os arquivos), através da variável:
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+
+A partir daqui, basta manipular os arquivos estáticos. Caso esteja importando eles, basta copiar as pastas "assets" e "styles" para a pasta static (dentro de setup)
+
+Em seguida, para o Python conseguir manipular os arquivos estáticos, é necessário rodar o comando collectstatic no terminal:
+
+python manage.py collectstatic
+
+Ao rodar o comando, o Django deve criar a pasta "static" dentro da pasta do projeto. Porém, para que o Django consiga incluir eles nas páginas HTML é necessário indicar no começo de cada página que contém arquivos estáticos a seguinte linha:
+
+{% load statics %}
+
+Em seguida, deve indicar todos os arquivos que são estáticos no caminho deles. Essa parte varia da página html, mas alguns exemplos:
+
+<link rel="stylesheet" href="{% static 'styles/style.css' %}">
+
+<a href="index"><img src="{% static '/assets/ícones/1x/Home - ativo.png' %}"> Home</a>
+
+<img src="{% static '/assets/ícones/1x/instagram.png' %}" alt="ícone instagram">

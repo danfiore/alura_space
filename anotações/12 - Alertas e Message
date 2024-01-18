@@ -1,0 +1,62 @@
+O Django fornece a função messages() para utilizarmos, onde podemos aplicar a funcionalidade dos alerts através dela toda vez que o usuário for redirecionado. Por exemplo no arquivo views.py do app usuarios:
+
+from django.contrib import messages
+
+def login(request):
+    
+    #...
+    
+    if usuario is not None:
+        auth.login(request, usuario)
+        messages.success(request, f"{nome} logado com sucesso!")
+        return redirect('index')
+    else:
+    	messages.error(request, "Erro ao efetuar login")
+    	return redirect('login')
+    	
+
+Depois é só aplicar o método messages em toda parte da aplicação ele for necessário, e assim podemos ir para a alteração no HTML utilizando estilização do bootstrap:
+
+{% for message in messages %}
+   <div class="alert alert-primary">
+      <p id="messages">{{message}}</p>
+   </div>
+{% endfor %}
+
+(OBS: Se o Bootstrap apresentar conflito com a estilização padrão do site, basta inserir no style.css apenas as estilizações chamadas do Bootstrap)
+
+Essa estrutura deve ser adicionada em todos os templates onde um alert será chamado (ou de preferência criada uma partial para chamá-lo), e irá exibir o alert específico que for chamado no arquivo views.py.
+
+===========================================================
+
+Para uma boa prática e garantir método DRY, é altamente recomendado que utilize uma partial para tratar os alerts, criando o arquivo _alertas.html dentro do diretório templates/partials/ e inserindo nele o seguinte código:
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <p id="messages">{{ message }}</p>
+        </div>
+    {% endfor %}
+{% endif %}
+
+O message.tags é para capturar qual o tipo de alert que está sendo chamado, podendo aplicar a estilização ideal para o message ideal, já que esse trecho de código será usado por todos os alertas. Isso funciona ao inserir o seguinte código no arquivo settings.py definindo cada tag:
+
+from django.contrib.messages import constants as messages
+
+#...
+
+# Messages
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+    messages.SUCCESS: 'success',
+    
+}
+
+Para garantir que isso funcione corretamente, as estilizações devem estar sendo devidamente chamadas no template, seja através do bootstrap ou do style.css. 
+
+Depois, no trecho de cada HTML onde estava sendo chamado o alert, deve ser incluída a seguinte linha:
+
+{% include 'partials/_alertas.html' %}
+
+

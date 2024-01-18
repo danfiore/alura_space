@@ -1,0 +1,29 @@
+O próprio Django gera uma página de administrador para cuidar da página, que pode ser acessada adicionando /admin ao final da URL. Para fazer o login, é necessário criar um usuário de administrador, para isso então deve rodar o seguinte comando no terminal:
+
+python manage.py createsuperuser
+
+Feito isso, o Django irá pedir para adicionar um nome de usuário, email e uma senha forte. Depois, para que uma tabela seja visível na tela de admin, é necessário ir no arquivo admin.py na pasta "nomeDoApp" e registrar a tabela conforme o exemplo do Alura Space:
+
+from galeria.models import Fotografia
+
+admin.site.register(Fotografia) 
+
+
+Para montar uma lista no /admin de todos os registros da tabela, basta adicionar uma classe no admin.py e depois enviar como parâmemtro no admin.site.register(). Segue exemplo de alguns métodos úteis para melhorar a visualização da lista:
+
+class ListandoFotografias(admin.ModelAdmin):
+    list_display = ("id", "nome", "legenda", "publicada") #Lista os registros exibindo os campos enviados como parâmetro
+    list_display_links = ("id", "nome") #Adiciona um link aos campos enviados
+    search_fields = ("nome", ) #Cria um sistema de busca através do campo enviado
+    list_filter = ("categoria", ) #Cria um sistema de filtragem com base no campo enviado
+    list_editable = ("publicada", ) #Possibilita editar a booleana pela lista
+    list_per_page = 10 #Cria um sistema de quebra de página a partir do número enviado
+    
+admin.site.register(Fotografia, ListandoFotografias)
+
+
+=========
+=-USERS-=
+=========
+
+O próprio Django disponibiliza na página de admin uma interface para lidar com usuários e suas permissões, podendo criar inclusive grupos de permissões onde um usuário pode estar selecionado
