@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    
+
             <section class="conteudo">
                 <section class="banner">
                     <img class="banner__imagem" src="{% static 'assets/imagens/Banner(2).png' %}" alt="banner Alura Space">
@@ -32,7 +32,7 @@
                                                 <img class="card__imagem" src="{{ fotografia.foto.url }}" alt="foto">   
                                             {% endif %}
                                         </a>
-                                        <span class="card__tag">Estrelas</span>
+                                        <span class="card__tag">{{ fotografia.categoria }}</span>
                                         <div class="card__info">
                                             <p class="card__titulo">{{ fotografia.nome }}</p>
                                             <div class="card__texto">

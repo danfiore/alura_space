@@ -1,0 +1,16 @@
+####### ALTERAÇÕES 18/01/2024 #######
+
+Definir menus diferentes pra usuários logados e não logados X
+
+Exibir a tag correta pra fotografia no card X
+
+Incluir validações de que somente o usuário que incluiu uma fotografia tenha permissão para editá-la ou exclui-la X
+
+
+#####################################
+
+Marcar a aba que o usuário está acessando
+
+Definir o usuário responsável pela fotografia automaticamente no CRUD
+
+Criar página de perfil de usuário

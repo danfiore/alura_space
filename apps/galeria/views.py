@@ -16,6 +16,7 @@ def index(request):
 
 def imagem(request, foto_id):
     fotografia = get_object_or_404(Fotografia, pk=foto_id)
+    
         
     return render(request, 'galeria/imagem.html', {"fotografia": fotografia})
 
@@ -43,7 +44,7 @@ def nova_imagem(request):
     form = FotografiaForms
 
     if request.method == 'POST':
-        form = FotografiaForms(request.POST, request.FILES)
+        form = FotografiaForms(request.POST, request.FILES, request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Nova fotografia cadastrada!')
@@ -53,6 +54,11 @@ def nova_imagem(request):
 
 def editar_imagem(request, foto_id):
     fotografia = Fotografia.objects.get(id=foto_id)
+    
+    if request.user != fotografia.usuario:
+        messages.error(request, "Usuário sem permissão!")
+        return redirect('index')
+    
     form = FotografiaForms(instance=fotografia)
 
     if request.method == 'POST':
@@ -66,6 +72,11 @@ def editar_imagem(request, foto_id):
 
 def deletar_imagem(request, foto_id):
     fotografia = Fotografia.objects.get(id=foto_id)
+
+    if request.user != fotografia.usuario:
+        messages.error(request, "Usuário sem permissão!")
+        return redirect('index')
+
     fotografia.delete()
     messages.success(request, 'Fotografia deletada!')
 
